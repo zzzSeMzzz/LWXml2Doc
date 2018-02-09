@@ -58,7 +58,7 @@ object frAbout: TfrAbout
     Top = 54
     Width = 54
     Height = 13
-    Caption = #1042#1077#1088#1089#1080#1103' 1.1'
+    Caption = #1042#1077#1088#1089#1080#1103' 1.2'
   end
   object Button1: TButton
     Left = 73

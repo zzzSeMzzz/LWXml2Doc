@@ -4,7 +4,7 @@ object frMain: TfrMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'LWXml2Doc'
-  ClientHeight = 538
+  ClientHeight = 540
   ClientWidth = 653
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET

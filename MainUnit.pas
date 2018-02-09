@@ -142,6 +142,7 @@ for i := 0 to XNode.ChildNodes.Count-1 do begin
   frmain.Memo1.Lines.Add(name);
   if(name='Документ') then begin
     m.kodNo:=getAttrValue(anode, 'КодНО');
+    //showmessage(m.kodNo);
     m.reportYear:=getAttrValue(anode, 'ОтчетГод');
   end;
   if(name='ФИОФЛ') then begin
@@ -204,8 +205,8 @@ if(model.sumCashInfo.Count<>1) then
  begin
    MessageDlg('Не удается создать файл '+edDoc.text+'. Возможно он занят другим процессом.',
       mtwarning, [mbok],0);
- model.Free;
-  exit;
+   model.Free;
+   exit;
  end;
 
 saveTemplate(edDoc.Text, model);
@@ -367,7 +368,7 @@ Word.Documents.Open(fileName);
 
 FindAndReplace(Word, '{ИННФЛ}', model.inn);
 FindAndReplace(Word, '{ФИО}', model.fio);
-FindAndReplace(Word, '{Ифнс}', model.kodNo);
+FindAndReplace(Word, '{Ифнс}', cbifns.Items[cbIfns.ItemIndex]); //model.kodNo);
 FindAndReplace(Word, '{СерНомДок}', model.passportNumber);
 FindAndReplace(Word, '{ВыдДок}', model.passportFrom);
 FindAndReplace(Word, '{УдЛичнДатаДок}', model.passportDate);
@@ -399,6 +400,7 @@ frChooseSum.ShowModal;}
   FindAndReplace(Word, '{ОКТМО2}', model.getSumValues.Strings[1]);
   FindAndReplace(Word, '{ПодлВозвПроп2}',
       MoneyToString(strtofloat(model.getSumKeys.Strings[1])));
+  FindAndReplace(Word, '{КБК2}', model.KBK);
 end;
 
 FindAndReplace(Word, '{КБК}', model.KBK);
