@@ -4,7 +4,7 @@ object frMain: TfrMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'LWXml2Doc'
-  ClientHeight = 540
+  ClientHeight = 595
   ClientWidth = 653
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -21,8 +21,8 @@ object frMain: TfrMain
   PixelsPerInch = 96
   TextHeight = 16
   object sSpeedButton9: TsSpeedButton
-    Left = 480
-    Top = 511
+    Left = 473
+    Top = 566
     Width = 26
     Height = 25
     Hint = #1054' '#1087#1088#1086#1075#1088#1072#1084#1084#1077
@@ -34,7 +34,7 @@ object frMain: TfrMain
     Left = 8
     Top = 8
     Width = 637
-    Height = 114
+    Height = 169
     Caption = #1060#1072#1081#1083#1099
     TabOrder = 0
     object edXml: TLabeledEdit
@@ -57,13 +57,14 @@ object frMain: TfrMain
       OnClick = Button1Click
     end
     object edDoc: TLabeledEdit
-      Left = 16
+      Left = 39
       Top = 76
-      Width = 585
+      Width = 562
       Height = 24
       EditLabel.Width = 56
       EditLabel.Height = 16
       EditLabel.Caption = 'Doc '#1092#1072#1081#1083
+      Enabled = False
       TabOrder = 2
     end
     object Button2: TButton
@@ -72,13 +73,51 @@ object frMain: TfrMain
       Width = 27
       Height = 24
       Caption = '...'
+      Enabled = False
       TabOrder = 3
       OnClick = Button2Click
+    end
+    object rbDox: TRadioButton
+      Left = 16
+      Top = 80
+      Width = 17
+      Height = 17
+      TabOrder = 4
+      OnClick = rbDoxClick
+    end
+    object rbExcel: TRadioButton
+      Left = 16
+      Top = 128
+      Width = 28
+      Height = 17
+      Checked = True
+      TabOrder = 5
+      TabStop = True
+      OnClick = rbExcelClick
+    end
+    object edExcel: TLabeledEdit
+      Left = 39
+      Top = 128
+      Width = 562
+      Height = 24
+      EditLabel.Width = 64
+      EditLabel.Height = 16
+      EditLabel.Caption = 'Excel '#1092#1072#1081#1083
+      TabOrder = 6
+    end
+    object Button4: TButton
+      Left = 607
+      Top = 128
+      Width = 27
+      Height = 24
+      Caption = '...'
+      TabOrder = 7
+      OnClick = Button4Click
     end
   end
   object GroupBox2: TGroupBox
     Left = 8
-    Top = 128
+    Top = 183
     Width = 637
     Height = 377
     Caption = #1057#1087#1088#1072#1074#1086#1095#1085#1080#1082
@@ -281,7 +320,7 @@ object frMain: TfrMain
   end
   object btnPasteToTemplate: TButton
     Left = 512
-    Top = 511
+    Top = 566
     Width = 133
     Height = 25
     Caption = #1047#1072#1087#1086#1083#1085#1080#1090#1100' '#1096#1072#1073#1083#1086#1085
@@ -290,12 +329,22 @@ object frMain: TfrMain
   end
   object Memo1: TMemo
     Left = 8
-    Top = 511
+    Top = 566
     Width = 402
-    Height = 127
+    Height = 144
     ScrollBars = ssVertical
     TabOrder = 3
     Visible = False
+  end
+  object Button3: TButton
+    Left = 416
+    Top = 566
+    Width = 51
+    Height = 25
+    Caption = 'Button3'
+    TabOrder = 4
+    Visible = False
+    OnClick = Button3Click
   end
   object odXml: TOpenDialog
     Filter = 'Xml '#1092#1072#1081#1083#1099'|*.xml|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
@@ -556,5 +605,12 @@ object frMain: TfrMain
   object XML: TXMLDocument
     Left = 192
     Top = 128
+  end
+  object sdExel: TSaveDialog
+    DefaultExt = 'doc'
+    Filter = #1044#1086#1082#1091#1084#1077#1085#1090' excel 97-2003|*.xls|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    OnTypeChange = sdExelTypeChange
+    Left = 520
+    Top = 80
   end
 end

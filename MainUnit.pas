@@ -9,7 +9,7 @@ uses
   Vcl.ImgList, acAlphaImageList, ComObj, UfrIfnsBook, UfrNalogBook, UfrAccountBook,
   UfrEditUsers, System.Generics.Collections, UfrBanksBook, DB, inifiles,
   Xml.xmldom, Xml.XMLIntf, Xml.XMLDoc, UReplaceModel, UfrDialogChoseOktmo,
-  AboutUnit;
+  AboutUnit, Generics.Defaults, Generics.Collections;
 
 function gep:string;
 
@@ -52,6 +52,12 @@ type
     edAccountNumber: TEdit;
     Label6: TLabel;
     sSpeedButton9: TsSpeedButton;
+    Button3: TButton;
+    rbDox: TRadioButton;
+    rbExcel: TRadioButton;
+    edExcel: TLabeledEdit;
+    Button4: TButton;
+    sdExel: TSaveDialog;
   procedure CreateParams(var Params: TCreateParams); override;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure Button1Click(Sender: TObject);
@@ -71,10 +77,16 @@ type
     procedure cbBankSelect(Sender: TObject);
     procedure btnPasteToTemplateClick(Sender: TObject);
     procedure sSpeedButton9Click(Sender: TObject);
+    procedure rbExcelClick(Sender: TObject);
+    procedure rbDoxClick(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure sdExelTypeChange(Sender: TObject);
   private
     { Private declarations }
     function validXmlDocFields:boolean;
     procedure saveTemplate(fileName:string; model:TReplaceModel);
+    procedure saveTemplateToEXEL(fileName:string; model:TReplaceModel);
   public
     { Public declarations }
     CurrentUser:TUser;
@@ -85,6 +97,10 @@ type
     procedure loadBanks;
     procedure showBankInfo(bankName:string);
   end;
+
+const ranges:array[0..25] of string =
+    ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+    );
 
 var
   frMain: TfrMain;
@@ -171,11 +187,20 @@ end;
 /////////////////////////////////////////
 begin
 if not validXmlDocFields then exit;
+if(rbDox.Checked) then begin
 if not CopyFile(pchar(gep+'Шаблон.doc'), pchar(edDoc.Text), False) then
 begin
   MessageDlg('Не удается создать файл '+edDoc.text+'. Возможно он занят другим процессом.',
       mtwarning, [mbok],0);
   exit;
+end;
+end else begin
+ if not CopyFile(pchar(gep+'Шаблон3.xls'), pchar(edExcel.Text), False) then
+begin
+  MessageDlg('Не удается создать файл '+edExcel.Text+'. Возможно он занят другим процессом.',
+      mtwarning, [mbok],0);
+  exit;
+end;
 end;
 
 
@@ -200,7 +225,7 @@ model.nalog:=cbNalog.Items[cbNalog.ItemIndex];
 model.address:=edAddress.Text;
 model.bank:=cbBank.Items[cbBank.ItemIndex];
 
-if(model.sumCashInfo.Count<>1) then
+if(model.sumCashInfo.Count<>1)and(rbDox.Checked) then
  if not CopyFile(pchar(gep+'Шаблон2.doc'), pchar(edDoc.Text), False) then
  begin
    MessageDlg('Не удается создать файл '+edDoc.text+'. Возможно он занят другим процессом.',
@@ -209,7 +234,8 @@ if(model.sumCashInfo.Count<>1) then
    exit;
  end;
 
-saveTemplate(edDoc.Text, model);
+if(rbDox.Checked) then
+saveTemplate(edDoc.Text, model) else saveTemplateToEXEL(edexcel.Text, model);
 end;
 
 procedure TfrMain.Button1Click(Sender: TObject);
@@ -222,6 +248,13 @@ procedure TfrMain.Button2Click(Sender: TObject);
 begin
 if not sdDoc.Execute(handle)then exit;
 edDoc.Text:=sdDoc.FileName;
+end;
+
+
+procedure TfrMain.Button4Click(Sender: TObject);
+begin
+if not sdExel.Execute(handle)then exit;
+edExcel.Text:=sdExel.FileName;
 end;
 
 function FindAndReplace(word:variant; const FindText,ReplaceText:string):boolean;
@@ -357,6 +390,185 @@ dm.qNalog.Open;
 dm.qNalog.Close;
 end;
 
+procedure TfrMain.rbDoxClick(Sender: TObject);
+begin
+edDoc.Enabled:=not rbExcel.Checked;
+Button2.Enabled:=not rbExcel.Checked;
+Button4.Enabled:=rbExcel.Checked;
+edExcel.Enabled:=rbExcel.Checked;
+end;
+
+procedure TfrMain.rbExcelClick(Sender: TObject);
+begin
+edDoc.Enabled:=not rbExcel.Checked;
+Button2.Enabled:=not rbExcel.Checked;
+Button4.Enabled:=rbExcel.Checked;
+edExcel.Enabled:=rbExcel.Checked;
+end;
+
+
+function getRangeName(pos:integer):string;
+var i, k:integer;
+begin
+//k:=pos div 26;
+ if(pos<=26)then Result:=ranges[pos-1]
+  else begin
+  k:=0;
+  while(pos>26) do begin
+                     pos:=pos-26;
+                     k:=k+1;
+                   end;
+
+    Result:=ranges[k-1]+ranges[pos-1];
+  end;
+end;
+
+function getRangeNum(rangeName:string):integer;
+var i, FoundIndex, l:integer;
+begin
+FoundIndex:=-1;
+result:=0;
+l:=Length(rangeName);
+if(l=1) then begin
+ TArray.BinarySearch<String>(ranges, rangeName[1], FoundIndex, TStringComparer.Ordinal);
+ Result:=FoundIndex+1;
+end else
+begin
+  TArray.BinarySearch<String>(ranges, rangeName[1], FoundIndex, TStringComparer.Ordinal);
+  Result:=26*(FoundIndex+1);
+  TArray.BinarySearch<String>(ranges, rangeName[2], FoundIndex, TStringComparer.Ordinal);
+  Result:=Result+FoundIndex+1;
+end;
+end;
+
+procedure printToChar(sheet: OleVariant;  text:string; startColumn, stepRange,
+    rowNum:integer; newLine: boolean = false; stepRow:integer=1) overload;
+var i, l, j, currentColumnt, space:integer;
+    sl:TStringList;
+    s:string;
+begin
+
+sl:=TStringList.Create;
+sl.DelimitedText:=text;
+sl.Delimiter:=' ';
+
+currentColumnt:=startColumn;
+space:=0;
+  for j := 0 to sl.Count-1 do begin
+    s:=sl[j];
+    l:=Length(s);
+    for I := 0 to l-1 do begin
+     currentColumnt:= startColumn+stepRange*i+space;
+     //showmessage(IntToStr(currentColumnt)+' место='+getRangeName(currentColumnt)+inttostr(rowNum)+ '_буква='+s[i+1]);
+     sheet.Range[getRangeName(currentColumnt)+inttostr(rowNum)]:=s[i+1];
+    end;
+    if(newLine=false) then
+      space:=currentColumnt+stepRange-1+stepRange
+    else rowNum:=rowNum+stepRow;
+  end;
+sl.Free;
+end;
+
+
+procedure printText(sheet: OleVariant;  text, rangeNam:string);
+begin
+  sheet.Range[rangeNam]:=text;
+end;
+
+procedure printSumToExcel(sheet: OleVariant; sum:string);
+var l:integer;
+    sI, sF:string;
+begin
+  if(pos('.', sum)=0)then begin
+    l:=Length(sum)-1;
+    printToChar(sheet, sum, getRangeNum('AT')-l*3, 3, 36);
+    printToChar(sheet, '00', getRangeNum('AZ'), 3, 36);
+  end else begin
+    l:=Length(sum)-3;
+    sI:=copy(sum, 1,l);
+    sF:= copy(sum, l+2,2);
+    l:=l-1;
+    printToChar(sheet, sI, getRangeNum('AT')-l*3, 3, 36);
+    printToChar(sheet, sF, getRangeNum('AZ'), 3, 36);
+  end;
+end;
+
+function getWordByNum(text:string; delimetr:char; num:integer):string;
+var sl:TStringList;
+begin
+sl:=TStringList.Create;
+sl.DelimitedText:=text;
+sl.Delimiter:=delimetr;
+if(num-1>sl.Count) then
+result:='' else result:=sl[num-1];
+sl.Free;
+end;
+
+procedure TfrMain.saveTemplateToEXEL(fileName: string; model: TReplaceModel);
+const ExcelApp = 'Excel.Application';
+var Excel, exSh: OleVariant;
+    frChooseSum:TfrChoseSumCash;
+    i:integer;
+begin
+  //save to xls
+chosenPosSumCahs:=0;
+Excel := CreateOleObject('Excel.Application');
+//showmessage(fileName);
+Excel.Workbooks.Open(fileName);
+exSh := Excel.Worksheets[1];
+
+//Надо ли это???
+printText(exSh, '1','V17');
+printToChar(exSh, '78', getRangeNum('V'), 3, 30);
+printText(exSh, '3','A32');
+printText(exSh, '1','A34');
+printToChar(exSh, 'ГД', getRangeNum('AK'), 3, 39);
+printToChar(exSh, '00', getRangeNum('AT'), 3, 39);
+
+
+printToChar(exSh, model.fio, 1, 3, 19, true, 2); //фио
+//printToChar(exSh, cbifns.Items[cbIfns.ItemIndex], 94, 3, 17); //IFSN !!!!!!!!!!!
+printToChar(exSh, model.inn, 37, 3, 2);//inn
+printToChar(exSh, model.reportYear, getRangeNum('BC'), 3, 39);
+printToChar(exSh, model.phone, 2, 3, 65);
+//printText(exSh, model.phone, 'K68');
+printToChar(exSh, model.kodNo, getRangeNum('CP'), 3, 17);
+
+
+if(model.sumCashInfo.Count=1) then begin
+  printToChar(exSh, model.getSumValues.Strings[0], 85, 3, 39); //oktmo
+  printSumToExcel(exSh, model.getSumKeys.Strings[0]); //sum vozvrat
+  //printToChar(exSh, model.getSumKeys.Strings[0], 13, 3, 36);
+
+end else
+begin
+  printToChar(exSh, model.getSumValues.Strings[0], 85, 3, 39);//oktmo
+  printSumToExcel(exSh, model.getSumKeys.Strings[0]); //sum vozvrat
+end;
+
+exSh := excel.WorkSheets.Item['Лист2'];
+printText(exSh, getWordByNum(model.fio, ' ', 1), 'S10');
+printText(exSh, getWordByNum(model.fio, ' ', 2)[1], 'CN10');
+printText(exSh, getWordByNum(model.fio, ' ', 3)[1], 'CX10');
+printToChar(exSh, model.bank, 1, 3, 18);
+printToChar(exSh, model.BIK, 1, 3, 30);
+printToChar(exSh, model.accountNumber, 1, 3, 34);
+printToChar(exSh, model.accountNumber, 1, 3, 60);
+printToChar(exSh, model.fio, 1, 3, 40, true, 2);
+printToChar(exSh, model.KBK, 1, 3, 56);
+
+
+exSh := excel.WorkSheets.Item['Лист3'];
+printToChar(exSh, getWordByNum(model.passportNumber, ' ', 1), getRangeNum('AB'), 3, 18);
+printToChar(exSh, getWordByNum(model.passportNumber, ' ', 2), getRangeNum('AK'), 3, 18);
+printToChar(exSh, getWordByNum(model.passportNumber, ' ', 3), getRangeNum('AT'), 3, 18);
+printToChar(exSh, model.passportFrom, getRangeNum('AB'), 3, 20);
+
+//Excel.Application.Workbooks[1].saveas(edexcel.Text);
+Excel.visible:=true;
+Excel:=unassigned;
+end;
+
 procedure TfrMain.saveTemplate(fileName: string; model: TReplaceModel);
 var Word: variant;
     frChooseSum:TfrChoseSumCash;
@@ -420,6 +632,14 @@ procedure TfrMain.sdDocTypeChange(Sender: TObject);
 begin
 case (Sender as TSaveDialog).FilterIndex of
     0: (Sender as TSaveDialog).DefaultExt := 'doc';
+    1: (Sender as TSaveDialog).DefaultExt := '';
+  end;
+end;
+
+procedure TfrMain.sdExelTypeChange(Sender: TObject);
+begin
+case (Sender as TSaveDialog).FilterIndex of
+    0: (Sender as TSaveDialog).DefaultExt := 'xsl';
     1: (Sender as TSaveDialog).DefaultExt := '';
   end;
 end;
@@ -500,14 +720,25 @@ frAbout.ShowModal;
 end;
 
 function TfrMain.validXmlDocFields: boolean;
+var currEd:TLabeledEdit;
+    currTemplate:string;
 begin
 Result:=false;
-if(edDoc.Text='') or (edXml.Text='') then
+if(rbDox.Checked) then
+begin
+  currEd:=edDoc;
+  currTemplate:=gep+'Шаблон.doc';
+end else begin
+  currEd:=edExcel;
+  currTemplate:=gep+'Шаблон3.xls';
+end;
+
+if(currEd.Text='') or (edXml.Text='') then
 begin
   MessageDlg('Заполните все поля',mtwarning,[mbok],0);
   exit;
 end;
-if not (FileExists(gep+'Шаблон.doc')) then
+if not (FileExists(currTemplate)) then
 begin
   MessageDlg('Файл шаблона не найден',mterror,[mbok],0);
   exit;
@@ -517,7 +748,7 @@ begin
   MessageDlg('Файл xml не найден',mterror,[mbok],0);
   exit;
 end;
-if(edDoc.Text=gep+'Шаблон.doc') then
+if(currEd.Text=currTemplate) then
 begin
   MessageDlg('Нельзя перезаписать шаблон. Выбирете другое место для сохранения',mterror,[mbok],0);
   exit;
@@ -530,6 +761,11 @@ var frEditUsers:TfrEditUser;
 begin
 frEditUser:=TfrEditUser.Create(Application);
 frEditUser.ShowModal;
+end;
+
+procedure TfrMain.Button3Click(Sender: TObject);
+begin
+showmessage(getrangename(strtoint(edAddress.Text)));
 end;
 
 end.

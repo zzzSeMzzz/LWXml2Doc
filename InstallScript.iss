@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "LWXml2Doc"
-#define MyAppVersion "1.1"
+#define MyAppVersion "1.3"
 #define MyAppPublisher "AlexSoft"
 #define MyAppURL "https://freelance.ru/CornHolio2"
 #define MyAppExeName "LWXmlToDoc.exe"
@@ -38,6 +38,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: ".\Win32\Release\LWXmlToDoc.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\Win32\Release\Шаблон.doc"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\Win32\Release\Шаблон2.doc"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\Win32\Release\Шаблон3.xls"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
